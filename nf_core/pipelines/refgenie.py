@@ -14,9 +14,6 @@ import yaml
 
 import nf_core.utils
 
-# import refgenconf
-
-
 # Set up logging
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -35,25 +32,33 @@ params {{
 }}
 """
 
+# Name of the refgenie plugin entry point in pyproject.toml.
+# Refgenie stores this plugin's settings under the same name.
+PLUGIN_NAME = "nf-core-refgenie"
 
-def _print_nf_config(rgc):
+
+def _print_nf_config(rg):
     """
     Generate a nextflow config file with the genomes
-    from the refgenie config file
+    from the local refgenie database
     Adapted from: https://github.com/refgenie/refgenie_nfcore
 
-    Takes a RefGenConf object as argument
+    Takes a refgenie.Refgenie object as argument
     """
-    abg = rgc.list_assets_by_genome()
+    # Imported here, so that importing this module does not require refgenie
+    from refgenie.exceptions import RefgenieError
+    from refgenie.models import AssetRegistryPathComponents
+
+    paths = rg.paths()
     genomes_str = ""
-    alias_translations = _get_alias_translation_file(rgc)
-    for genome, asset_list in abg.items():
+    alias_translations = _get_alias_translation_file(rg)
+    # Genome aliases, and the asset groups that have a default asset
+    for genome in paths:
         genomes_str += f"    '{genome}' {{\n"
-        for asset in asset_list:
+        for asset in paths[genome]:
             try:
-                pth = rgc.seek(genome, asset)
-            # Catch refgenconf exceptions without importing refgenconf
-            except (OSError, RuntimeError):
+                pth = rg.asset.seek_components(AssetRegistryPathComponents(genome=genome, asset_group=asset))
+            except RefgenieError:
                 log.warning(f"{genome}/{asset} is incomplete, ignoring...")
             else:
                 # Translate an alias name to the alias used in the pipeline
@@ -107,31 +112,23 @@ def _update_nextflow_home_config(refgenie_genomes_config_file, nxf_home):
             log.info(f"Created new nextflow config file: {nxf_home_config}")
 
 
-def _get_alias_translation_file(rgc):
+def _get_alias_translation_file(rg):
     """
     Read a file containing alias translations.
 
-    Alias translation file should be located in the same folder as the refgenie `genome_config.yaml` file,
-    the path is set to $REFGENIE environment variable by `refgenie init`.
+    Alias translation file should be located in the refgenie genome folder
+    (by default `~/.refgenie/genomes`).
     Alias translation file should be named `alias_translations.yaml`
 
-    Input file contains the name of refgenie server aliases as keys and the name of the respective nf-core pipeline aliases as values.
+    Input file contains the name of refgenie asset groups as keys and the name of the respective nf-core pipeline aliases as values.
     Such as:
     ensembl_gtf: gtf
     star_index: star
     """
     translations = {}
 
-    if "REFGENIE" in os.environ:
-        refgenie_genomes_config_path = os.environ.get("REFGENIE")
-        refgenie_genomes_config_directory = Path(refgenie_genomes_config_path).parents[0]
-    elif "genome_folder" in rgc:
-        refgenie_genomes_config_directory = Path(rgc["genome_folder"])
-    else:
-        return translations
-
     try:
-        with open(refgenie_genomes_config_directory / "alias_translations.yaml") as yaml_file:
+        with open(Path(rg.genome_folder) / "alias_translations.yaml") as yaml_file:
             translations = yaml.load(yaml_file, Loader=yaml.Loader)
     except FileNotFoundError:
         pass
@@ -139,24 +136,31 @@ def _get_alias_translation_file(rgc):
     return translations
 
 
-def update_config(rgc):
+def update_config(rg, event=None):
     """
     Update the genomes.config file after a local refgenie database has been updated
 
-    This function is executed after running 'refgenie pull <genome>/<asset>'
-    The refgenie config file is transformed into a nextflow.config file, which is used to
+    Refgenie (1.0 or later) runs this function as a 'post_update' plugin after any command
+    that changes local assets, such as 'refgenie pull <genome>/<asset>'.
+    The local refgenie assets are transformed into a nextflow.config file, which is used to
     overwrite the 'refgenie_genomes.config' file.
     The path to the target  config file is inferred from the following options, in order:
 
-    - the 'nextflow_config' attribute in the refgenie config file
+    - the 'nextflow_config' plugin setting, set with:
+      refgenie plugins set nf-core-refgenie nextflow_config=/path/to/refgenie_genomes.config
     - the NXF_REFGENIE_PATH environment variable
     - otherwise defaults to: $NXF_HOME/nf-core/refgenie_genomes.config
 
     Additionally, an 'includeConfig' statement is added to the file $NXF_HOME/config
     """
 
-    # Compile nextflow refgenie_genomes.config from refgenie config
-    refgenie_genomes = _print_nf_config(rgc)
+    # refgenie < 1.0 calls plugins with one argument and does not catch their errors
+    if event is None:
+        log.warning("The nf-core refgenie integration needs refgenie 1.0 or later. Not updating the genomes config.")
+        return False
+
+    # Compile nextflow refgenie_genomes.config from the local refgenie assets
+    refgenie_genomes = _print_nf_config(rg)
 
     # Get the path to NXF_HOME
     # If NXF_HOME is not set, create it at $HOME/.nextflow
@@ -172,8 +176,9 @@ def update_config(rgc):
             nxf_home = False
 
     # Get the path for storing the updated refgenie_genomes.config
-    if hasattr(rgc, "nextflow_config"):
-        refgenie_genomes_config_file = rgc.nextflow_config
+    plugin_settings = rg.plugins.settings(PLUGIN_NAME)
+    if "nextflow_config" in plugin_settings:
+        refgenie_genomes_config_file = plugin_settings["nextflow_config"]
     elif "NXF_REFGENIE_PATH" in os.environ:
         refgenie_genomes_config_file = os.environ.get("NXF_REFGENIE_PATH")
     elif nxf_home:

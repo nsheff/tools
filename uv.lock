@@ -1856,7 +1856,6 @@ dependencies = [
     { name = "pygithub" },
     { name = "pyyaml" },
     { name = "questionary" },
-    { name = "refgenie" },
     { name = "repo2rocrate" },
     { name = "requests" },
     { name = "requests-cache" },
@@ -1867,6 +1866,11 @@ dependencies = [
     { name = "tabulate" },
     { name = "textual" },
     { name = "trogon" },
+]
+
+[package.optional-dependencies]
+refgenie = [
+    { name = "refgenie" },
 ]
 
 [package.dev-dependencies]
@@ -1882,6 +1886,7 @@ dev = [
     { name = "pytest-sugar" },
     { name = "pytest-textual-snapshot" },
     { name = "pytest-xdist" },
+    { name = "refgenie" },
     { name = "responses" },
     { name = "ruff" },
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -1913,7 +1918,7 @@ requires-dist = [
     { name = "pygithub" },
     { name = "pyyaml" },
     { name = "questionary", specifier = ">=2.0.1" },
-    { name = "refgenie", specifier = ">=1.0.0a2" },
+    { name = "refgenie", marker = "extra == 'refgenie'", specifier = ">=1.0.0a3" },
     { name = "repo2rocrate" },
     { name = "requests" },
     { name = "requests-cache" },
@@ -1925,6 +1930,7 @@ requires-dist = [
     { name = "textual", specifier = "==8.2.8" },
     { name = "trogon" },
 ]
+provides-extras = ["refgenie"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1939,6 +1945,7 @@ dev = [
     { name = "pytest-sugar", specifier = ">=1.1.1" },
     { name = "pytest-textual-snapshot", specifier = "==1.1.0" },
     { name = "pytest-xdist", specifier = ">=3.7.0" },
+    { name = "refgenie", specifier = ">=1.0.0a3" },
     { name = "responses" },
     { name = "ruff" },
     { name = "sphinx" },
@@ -3110,7 +3117,7 @@ wheels = [
 
 [[package]]
 name = "refgenie"
-version = "1.0.0a2"
+version = "1.0.0a3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -3128,9 +3135,9 @@ dependencies = [
     { name = "ubiquerg" },
     { name = "yacman" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/30/7d3e27f47882afdcf0f7d324fe10ac274010484645f027abe67ebaa9be37/refgenie-1.0.0a2.tar.gz", hash = "sha256:8409382da567023a1229b648bdc85569b272a9b8939ea5b6bc5a4a3632f282fa", size = 3059542, upload-time = "2026-11-14T19:57:33.824Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/25/946e05fe90bac0fcc4c8286947dcf9d995af844d0c98d46d1d488a919060/refgenie-1.0.0a3.tar.gz", hash = "sha256:e8f7bceb3afb7fa9b047728d4ccb8baa8c7c6bdb3fba723785ee99db1162faf8", size = 3062899, upload-time = "2026-11-17T14:25:41.439Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/2e/70dddd09bca87badc97c6e141679886a296aeeb4c1e6e0d39fcc58fa5106/refgenie-1.0.0a2-py3-none-any.whl", hash = "sha256:a6836aa8fc0e7807ec7d7b1d12dbbdc27de217fafe5bd059a6b0c89841c44063", size = 3140336, upload-time = "2026-11-14T19:57:31.726Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/97/07e70787c8cd6994984e81acbe7ee4c4d01b21d0a39c0a1abb85958348bd/refgenie-1.0.0a3-py3-none-any.whl", hash = "sha256:1da9834b10f49b51fd6070f956902f8010f43892963682eb6c9c5fc574f67469", size = 3143566, upload-time = "2026-11-17T14:25:38.939Z" },
 ]
 
 [[package]]

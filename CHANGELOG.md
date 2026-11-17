@@ -10,6 +10,7 @@
 - limit get_wf_files to only consider files not ignored by git and remove `Pipeline.list_files()` in favour of it ([#4593](https://github.com/nf-core/tools/pull/4593))
 - make docker builds faster ([#4614](https://github.com/nf-core/tools/pull/4614))
 - update the refgenie integration to refgenie 1.0 ([#XXXX](https://github.com/nf-core/tools/pull/XXXX))
+- make refgenie an optional dependency, installed with `pip install nf-core[refgenie]` ([#XXXX](https://github.com/nf-core/tools/pull/XXXX))
 
 ### Linting
 
